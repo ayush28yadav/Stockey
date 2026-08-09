@@ -1,0 +1,13 @@
+{
+  "name": "stockey",
+  "private": true,
+  "workspaces": ["api", "workers", "bots", "frontend"],
+  "scripts": {
+    "setup:dev": "node scripts/setup-dev-env.mjs",
+    "dev:api": "npm run dev --workspace=@stockey/api",
+    "dev:frontend": "npm run dev --workspace=@stockey/frontend",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "engines": { "node": ">=20.19.0" }
+}
