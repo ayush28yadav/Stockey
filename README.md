@@ -42,6 +42,7 @@ The callback URL must match Google Console character-for-character. The backend 
 | POST | `/api/auth/refresh` | rotates refresh token and returns fresh access token |
 | POST | `/api/auth/logout` | revokes the active refresh token |
 | GET | `/api/users/me` | authenticated smoke-test endpoint |
+| POST | `/api/orders` | authenticated order submission; requires an `Idempotency-Key` UUID header |
 
 Access tokens are RS256 JWTs valid for 15 minutes. The API returns them for email/password clients and also writes an HTTP-only access cookie. Refresh tokens are opaque, HTTP-only, scoped to `/api/auth`, valid for seven days, and rotated on every refresh. Clients can use the cookie (`credentials: 'include'`) or `Authorization: Bearer <access token>`.
 
@@ -50,3 +51,13 @@ Access tokens are RS256 JWTs valid for 15 minutes. The API returns them for emai
 - `api/sql/001_init.sql` is applied automatically only when PostgreSQL's Docker volume is first created. For a fresh local database, use `docker compose down -v` (this deletes local database data) and start Compose again.
 - The `workers` and `bots` workspaces are intentionally minimal reserved entry points for the matching-engine milestone. Their directories and build configuration are already in place.
 - Production needs HTTPS, `COOKIE_SECURE=true`, production origins/callback URL, and externally managed RSA keys. The API refuses to start with insecure cookies in production.
+
+## Run API integration tests
+
+With the Compose stack running, execute:
+
+```bash
+npm run test:api
+```
+
+The suite creates an isolated user, checks registration, login failure/success, refresh-token rotation, authenticated order submission, and idempotent replay, then removes its test data.

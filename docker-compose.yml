@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: api/Dockerfile
-    command: sh -c "node scripts/setup-dev-env.mjs && npm run dev --workspace=@stockey/api"
+    command: sh -c "node scripts/setup-dev-env.mjs && npm run dev"
     working_dir: /app
     ports:
       - "4000:4000"

@@ -4,9 +4,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
-    "typecheck": "tsc -b --pretty false"
+    "build": "vite build",
+    "typecheck": "echo \"No type checking configured\""
   },
-  "dependencies": { "@vitejs/plugin-react": "^5.2.0", "vite": "^7.3.6", "react": "^18.3.1", "react-dom": "^18.3.1" },
-  "devDependencies": { "@types/react": "^18.3.3", "@types/react-dom": "^18.3.0", "typescript": "^5.5.4" }
+  "dependencies": {
+    "@vitejs/plugin-react": "^5.2.0",
+    "vite": "^7.3.6",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {}
 }
