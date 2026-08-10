@@ -73,8 +73,58 @@ services:
       timeout: 3s
       retries: 10
 
+  # Automated market simulation (Phase 4). Runs as a standalone process that
+  # places realistic buy/sell orders through the public API. Opt-in via the
+  # `bots` profile so the default `docker compose up` remains clean for
+  # integration testing: `docker compose --profile bots up`.
+  bots:
+    build:
+      context: .
+      dockerfile: bots/Dockerfile
+    command: npm run start --workspace=@stockey/bots
+    working_dir: /app
+    profiles: ["bots"]
+    environment:
+      API_ORIGIN: http://api:4000
+      DATABASE_URL: postgresql://stockey:stockey@postgres:5432/stockey
+      BOT_COUNT: ${BOT_COUNT:-10}
+      TICK_INTERVAL_MS: ${TICK_INTERVAL_MS:-500}
+      PRICE_VARIANCE: ${PRICE_VARIANCE:-0.005}
+      MARKET_ORDER_PROBABILITY: ${MARKET_ORDER_PROBABILITY:-0.2}
+      ENABLED_STOCKS: ${ENABLED_STOCKS:-AAPL,RELIANCE,INFY}
+      STRATEGY: ${STRATEGY:-mixed}
+      BOT_EMAIL_PREFIX: ${BOT_EMAIL_PREFIX:-bot}
+      BOT_PASSWORD: ${BOT_PASSWORD:-stockey-bot-password}
+      BOT_SEED_BALANCE: ${BOT_SEED_BALANCE:-1000000}
+      BOT_SEED_HOLDINGS: ${BOT_SEED_HOLDINGS:-10000}
+      BOT_SEED_PRICE: ${BOT_SEED_PRICE:-100}
+      MIN_ORDER_QUANTITY: ${MIN_ORDER_QUANTITY:-1}
+      MAX_ORDER_QUANTITY: ${MAX_ORDER_QUANTITY:-50}
+      VOLUME_MIN_QUANTITY: ${VOLUME_MIN_QUANTITY:-100}
+      VOLUME_MAX_QUANTITY: ${VOLUME_MAX_QUANTITY:-500}
+      VOLUME_ORDER_PROBABILITY: ${VOLUME_ORDER_PROBABILITY:-0.3}
+      DRIFT_RATE: ${DRIFT_RATE:-0.001}
+      TREND_WINDOW: ${TREND_WINDOW:-20}
+      TREND_MIN_SAMPLES: ${TREND_MIN_SAMPLES:-5}
+      MEAN_WINDOW: ${MEAN_WINDOW:-30}
+      MEAN_MIN_SAMPLES: ${MEAN_MIN_SAMPLES:-5}
+      MEAN_THRESHOLD: ${MEAN_THRESHOLD:-0.01}
+      MARKET_DATA_REFRESH_TICKS: ${MARKET_DATA_REFRESH_TICKS:-10}
+      LOG_LEVEL: ${BOT_LOG_LEVEL:-info}
+    volumes:
+      - .:/app
+      - bot_node_modules:/app/node_modules
+    depends_on:
+      api:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
 volumes:
   postgres_data:
   redis_data:
   api_node_modules:
   frontend_node_modules:
+  bot_node_modules:
