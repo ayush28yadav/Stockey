@@ -16,6 +16,7 @@
         sharding or finer-grained locks for high throughput.
 */
 import { randomUUID } from 'node:crypto';
+import { pubClient } from '../redis.js';
 const OPEN_STATUSES = ['open', 'partially_filled'];
 const lockReleaseScript = `
     if redis.call('GET', KEYS[1]) == ARGV[1] then
@@ -202,6 +203,15 @@ export class MatchingEngine {
             await client.query(`INSERT INTO trades (buy_order_id, sell_order_id, stock_symbol, price, quantity)
          VALUES ($1, $2, $3, $4::numeric, $5)`, [buyOrder.id, sellOrder.id, buyOrder.stock_symbol, executionPrice, quantity]);
             await client.query('COMMIT');
+            const bookUpdate = {
+                symbol: buyOrder.stock_symbol,
+                buyOrder: updatedBuy,
+                sellOrder: updatedSell,
+                executedQuantity: quantity,
+                price: executionPrice,
+                timestamp: new Date().toISOString()
+            };
+            await pubClient.publish(`orderbook:${buyOrder.stock_symbol}`, JSON.stringify(bookUpdate));
             return { executedQuantity: quantity, orders: [updatedBuy, updatedSell] };
         }
         catch (error) {
@@ -245,7 +255,10 @@ export class MatchingEngine {
             symbol: order.stock_symbol,
             side: order.side,
             price: order.price,
+            quantity: String(order.quantity),
+            filledQuantity: String(order.filled_quantity),
             remaining: String(remaining(order)),
+            status: order.status,
             bookMember: member
         })
             // Bids use an inverted score so ZRANGE returns the highest price first;
