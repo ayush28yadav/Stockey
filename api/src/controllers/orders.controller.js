@@ -6,6 +6,7 @@
 import { z } from 'zod';
 import { pool } from '../db.js';
 import { enqueueOrderForMatching } from '../queues/order-matching.queue.js';
+import { scheduleOrderExpiry } from '../queues/scheduler.js';
 const symbol = z.string().trim().toUpperCase().regex(/^[A-Z][A-Z0-9.]{0,15}$/, 'Invalid stock symbol');
 const baseOrder = z.object({
     stockSymbol: symbol,
@@ -50,6 +51,8 @@ export async function submitOrder(request, response, next) {
         if (inserted.rows[0]) {
             const order = inserted.rows[0];
             await enqueueOrderForMatching(order.id);
+            if (order.order_type === 'limit')
+                await scheduleOrderExpiry(order.id);
             return response.status(201).json({ order: presentOrder(order) });
         }
         const existing = await pool.query('SELECT * FROM orders WHERE user_id = $1 AND idempotency_key = $2', [request.auth.userId, idempotencyKey]);

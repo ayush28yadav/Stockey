@@ -17,6 +17,11 @@
 */
 import { randomUUID } from 'node:crypto';
 import { pubClient } from '../redis.js';
+// Phase 5 additions: fire trade-confirmation emails and clean up order-expiry
+// jobs after every successful trade settlement.
+import { enqueueTradeConfirmation } from '../queues/notifications.queue.js';
+import { cancelOrderExpiryJob } from '../queues/scheduler.js';
+
 const OPEN_STATUSES = ['open', 'partially_filled'];
 const lockReleaseScript = `
     if redis.call('GET', KEYS[1]) == ARGV[1] then
@@ -165,7 +170,9 @@ export class MatchingEngine {
             if (executionPrice === null)
                 throw new Error('A resting market order cannot exist in the order book');
             const priceCents = cents(executionPrice);
-            const users = await client.query('SELECT id, balance FROM users WHERE id = ANY($1::uuid[]) ORDER BY id FOR UPDATE', [[buyOrder.user_id, sellOrder.user_id]]);
+            // Select id, balance AND email. The email is used by Phase 5 to
+            // send trade confirmation notifications without an extra DB query.
+            const users = await client.query('SELECT id, balance, email FROM users WHERE id = ANY($1::uuid[]) ORDER BY id FOR UPDATE', [[buyOrder.user_id, sellOrder.user_id]]);
             const buyer = users.rows.find((user) => user.id === buyOrder.user_id);
             if (!buyer || users.rows.length !== 2)
                 throw new Error('Trade users no longer exist');
@@ -212,8 +219,69 @@ export class MatchingEngine {
                 timestamp: new Date().toISOString()
             };
             await pubClient.publish(`orderbook:${buyOrder.stock_symbol}`, JSON.stringify(bookUpdate));
+
+            // ── Phase 5: Send trade confirmation emails ────────────────────────────
+            // Both buyer and seller receive a confirmation. We fetch their emails
+            // from the DB inside the already-open connection (buyer and seller rows
+            // are in `users.rows` from the earlier FOR UPDATE select).
+            const seller = users.rows.find((u) => u.id === sellOrder.user_id);
+            const totalForEmail = quantity * priceCents / 100;
+
+            // Enqueue confirmation for the buyer.
+            if (buyer?.email) {
+                await enqueueTradeConfirmation({
+                    userId: buyOrder.user_id,
+                    email:  buyer.email,
+                    side:   'buy',
+                    stockSymbol: buyOrder.stock_symbol,
+                    quantity,
+                    price:  Number(executionPrice),
+                    total: totalForEmail,
+                    orderId: buyOrder.id,
+                    executedAt: bookUpdate.timestamp
+                }).catch((err) =>
+                    // Non-fatal: don't let a queue error roll back a completed trade.
+                    console.error('[matching-engine] Failed to enqueue buyer notification:', err.message)
+                );
+            }
+
+            // Enqueue confirmation for the seller.
+            if (seller?.email) {
+                await enqueueTradeConfirmation({
+                    userId: sellOrder.user_id,
+                    email:  seller.email,
+                    side:   'sell',
+                    stockSymbol: sellOrder.stock_symbol,
+                    quantity,
+                    price:  Number(executionPrice),
+                    total: totalForEmail,
+                    orderId: sellOrder.id,
+                    executedAt: bookUpdate.timestamp
+                }).catch((err) =>
+                    console.error('[matching-engine] Failed to enqueue seller notification:', err.message)
+                );
+            }
+
+            // ── Phase 5: Cancel pending order-expiry delayed jobs ─────────────────
+            // If either order is now fully filled, its BullMQ delayed expiry job
+            // (scheduled for market close) is no longer needed. Cancel it so we
+            // don't try to cancel an already-filled order at close.
+            // We fire-and-forget with .catch to keep the hot path clean.
+            if (updatedBuy.status === 'filled' || updatedBuy.status === 'cancelled') {
+                cancelOrderExpiryJob(updatedBuy.id).catch((err) =>
+                    console.error('[matching-engine] Failed to cancel buy order expiry job:', err.message)
+                );
+            }
+            if (updatedSell.status === 'filled' || updatedSell.status === 'cancelled') {
+                cancelOrderExpiryJob(updatedSell.id).catch((err) =>
+                    console.error('[matching-engine] Failed to cancel sell order expiry job:', err.message)
+                );
+            }
+
+            // Return the settlement result to the caller (matchOrder loop).
             return { executedQuantity: quantity, orders: [updatedBuy, updatedSell] };
         }
+
         catch (error) {
             await client.query('ROLLBACK');
             throw error;

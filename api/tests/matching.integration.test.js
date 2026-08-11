@@ -10,7 +10,11 @@ import { pool } from '../src/db.js';
 
 const apiOrigin = process.env.API_BASE_URL ?? 'http://localhost:4000';
 const password = 'integration-test-password';
-const symbol = 'AAPL';
+
+function uniqueSymbol() {
+    const id = randomUUID().replace(/-/g, '').slice(0, 6).toUpperCase();
+    return `SYM${id}`;
+}
 
 function jsonRequest(path, init = {}) {
   return fetch(`${apiOrigin}${path}`, {
@@ -69,8 +73,9 @@ after(async () => {
 });
 
 test('matches limit buy and sell orders end to end', async () => {
-  const sellerEmail = `integration-matching-seller-${randomUUID()}@example.test`;
-  const buyerEmail = `integration-matching-buyer-${randomUUID()}@example.test`;
+    const symbol = uniqueSymbol();
+    const sellerEmail = `integration-matching-seller-${randomUUID()}@example.test`;
+    const buyerEmail = `integration-matching-buyer-${randomUUID()}@example.test`;
 
   const seller = await createUser(sellerEmail);
   const buyer = await createUser(buyerEmail);
@@ -111,8 +116,9 @@ test('matches limit buy and sell orders end to end', async () => {
 });
 
 test('partially fills a large limit buy order against smaller sell liquidity', async () => {
-  const sellerEmail = `integration-matching-seller-${randomUUID()}@example.test`;
-  const buyerEmail = `integration-matching-buyer-${randomUUID()}@example.test`;
+    const symbol = uniqueSymbol();
+    const sellerEmail = `integration-matching-seller-${randomUUID()}@example.test`;
+    const buyerEmail = `integration-matching-buyer-${randomUUID()}@example.test`;
 
   const seller = await createUser(sellerEmail);
   const buyer = await createUser(buyerEmail);
@@ -152,7 +158,8 @@ test('partially fills a large limit buy order against smaller sell liquidity', a
 });
 
 test('cancels market orders when no opposite liquidity exists', async () => {
-  const buyerEmail = `integration-matching-buyer-${randomUUID()}@example.test`;
+    const symbol = uniqueSymbol();
+    const buyerEmail = `integration-matching-buyer-${randomUUID()}@example.test`;
   const buyer = await createUser(buyerEmail);
 
   const buyOrder = await placeOrder(buyer.accessToken, {

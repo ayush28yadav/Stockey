@@ -21,7 +21,19 @@ const schema = z.object({
     GOOGLE_CLIENT_ID: z.string().optional().default(''),
     GOOGLE_CLIENT_SECRET: z.string().optional().default(''),
     GOOGLE_CALLBACK_URL: optionalUrl,
-    COOKIE_SECURE: z.enum(['true', 'false']).default('false')
+    COOKIE_SECURE: z.enum(['true', 'false']).default('false'),
+
+    // ── Email / SMTP ──────────────────────────────────────────────────────────
+    // All SMTP fields are optional. When they are absent (or empty), the
+    // `mailer.js` module automatically falls back to an Ethereal test account
+    // so developers see emails in the console without a real mail server.
+    // In production, set all four to a real SMTP provider (SendGrid, SES, etc.)
+    SMTP_HOST: z.string().optional().default(''),
+    SMTP_PORT: z.coerce.number().int().positive().optional().default(587),
+    SMTP_USER: z.string().optional().default(''),
+    SMTP_PASS: z.string().optional().default(''),
+    // The "From" address shown in the email client.
+    SMTP_FROM: z.string().optional().default('Stockey <noreply@stockey.dev>')
 });
 const parsed = schema.safeParse(process.env);
 if (!parsed.success) {
