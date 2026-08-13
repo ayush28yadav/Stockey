@@ -78,8 +78,6 @@ export class Bot {
         // Run the first tick immediately so the market warms up fast.
         void this.tick();
         this.timer = setInterval(() => void this.tick(), this.config.TICK_INTERVAL_MS);
-        // Do not keep the Node process alive solely because of this timer.
-        this.timer.unref?.();
     }
 
     /**

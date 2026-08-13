@@ -50,7 +50,7 @@ if (config.cookieSecure)
     app.set('trust proxy', 1);
 
 app.use(helmet({ crossOriginResourcePolicy: false }));
-app.use(cors({ origin: config.FRONTEND_ORIGIN, credentials: true, methods: ['GET', 'POST', 'OPTIONS'] }));
+app.use(cors({ origin: config.FRONTEND_ORIGIN, credentials: true, methods: ['GET', 'POST', 'DELETE', 'OPTIONS'] }));
 app.use(express.json({ limit: '32kb' }));
 app.use(cookieParser());
 

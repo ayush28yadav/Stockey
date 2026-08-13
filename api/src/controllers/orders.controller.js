@@ -6,7 +6,9 @@
 import { z } from 'zod';
 import { pool } from '../db.js';
 import { enqueueOrderForMatching } from '../queues/order-matching.queue.js';
-import { scheduleOrderExpiry } from '../queues/scheduler.js';
+import { cancelOrderExpiryJob, scheduleOrderExpiry } from '../queues/scheduler.js';
+import { MatchingEngine } from '../matching/matching-engine.js';
+import { redisClient } from '../redis.js';
 const symbol = z.string().trim().toUpperCase().regex(/^[A-Z][A-Z0-9.]{0,15}$/, 'Invalid stock symbol');
 const baseOrder = z.object({
     stockSymbol: symbol,
@@ -32,6 +34,75 @@ function presentOrder(order) {
         createdAt: order.created_at,
         updatedAt: order.updated_at
     };
+}
+
+const openStatuses = ['open', 'partially_filled'];
+
+function orderQuery(filters = '') {
+    return `SELECT * FROM orders ${filters} ORDER BY created_at DESC`;
+}
+
+export async function listOrders(request, response, next) {
+    const status = request.query.status?.toString();
+    const stockSymbol = request.query.symbol?.toString().trim().toUpperCase();
+    if (status && !['open', 'partially_filled', 'filled', 'cancelled'].includes(status))
+        return response.status(400).json({ error: 'INVALID_STATUS' });
+    if (stockSymbol && !symbol.safeParse(stockSymbol).success)
+        return response.status(400).json({ error: 'INVALID_SYMBOL' });
+
+    try {
+        const clauses = ['user_id = $1'];
+        const values = [request.auth.userId];
+        if (status) {
+            values.push(status);
+            clauses.push(`status = $${values.length}`);
+        }
+        if (stockSymbol) {
+            values.push(stockSymbol);
+            clauses.push(`stock_symbol = $${values.length}`);
+        }
+        const result = await pool.query(orderQuery(`WHERE ${clauses.join(' AND ')}`), values);
+        return response.json({ orders: result.rows.map(presentOrder) });
+    }
+    catch (error) {
+        return next(error);
+    }
+}
+
+export async function getOrder(request, response, next) {
+    try {
+        const result = await pool.query(
+            'SELECT * FROM orders WHERE id = $1 AND user_id = $2',
+            [request.params.id, request.auth.userId]
+        );
+        if (!result.rows[0])
+            return response.status(404).json({ error: 'ORDER_NOT_FOUND' });
+        return response.json({ order: presentOrder(result.rows[0]) });
+    }
+    catch (error) {
+        return next(error);
+    }
+}
+
+export async function cancelOrder(request, response, next) {
+    try {
+        const result = await pool.query(`UPDATE orders
+            SET status = 'cancelled', updated_at = NOW()
+            WHERE id = $1 AND user_id = $2 AND status = ANY($3::varchar[])
+            RETURNING *`, [request.params.id, request.auth.userId, openStatuses]);
+        const order = result.rows[0];
+        if (!order)
+            return response.status(409).json({ error: 'ORDER_NOT_CANCELLABLE' });
+
+        // Keep the Redis order book in sync immediately so cancelled orders
+        // disappear from every connected dashboard without waiting for expiry.
+        await new MatchingEngine(redisClient, pool).syncOrderBook(order);
+        await cancelOrderExpiryJob(order.id).catch(() => undefined);
+        return response.json({ order: presentOrder(order) });
+    }
+    catch (error) {
+        return next(error);
+    }
 }
 export async function submitOrder(request, response, next) {
     const idempotencyKey = request.get('idempotency-key');

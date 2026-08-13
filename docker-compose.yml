@@ -30,7 +30,11 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile
-    command: npm run dev --workspace=@stockey/frontend -- --host 0.0.0.0
+    # The workspace source and node_modules are both mounted for development.
+    # Reconcile the named node_modules volume with package-lock.json first so
+    # newly added frontend dependencies are available without manually
+    # deleting a stale Docker volume.
+    command: sh -c "npm ci && npm run dev --workspace=@stockey/frontend -- --host 0.0.0.0"
     working_dir: /app
     ports:
       - "5173:5173"
@@ -83,7 +87,6 @@ services:
       dockerfile: bots/Dockerfile
     command: npm run start --workspace=@stockey/bots
     working_dir: /app
-    profiles: ["bots"]
     environment:
       API_ORIGIN: http://api:4000
       DATABASE_URL: postgresql://stockey:stockey@postgres:5432/stockey
@@ -91,7 +94,7 @@ services:
       TICK_INTERVAL_MS: ${TICK_INTERVAL_MS:-500}
       PRICE_VARIANCE: ${PRICE_VARIANCE:-0.005}
       MARKET_ORDER_PROBABILITY: ${MARKET_ORDER_PROBABILITY:-0.2}
-      ENABLED_STOCKS: ${ENABLED_STOCKS:-AAPL,RELIANCE,INFY}
+      ENABLED_STOCKS: ${ENABLED_STOCKS:-AAPL,RELIANCE,INFY,TCS,HDFCBANK,GOOGL,AMZN,MSFT,NVDA,META,TSLA,SBI,ICICIBANK}
       STRATEGY: ${STRATEGY:-mixed}
       BOT_EMAIL_PREFIX: ${BOT_EMAIL_PREFIX:-bot}
       BOT_PASSWORD: ${BOT_PASSWORD:-stockey-bot-password}

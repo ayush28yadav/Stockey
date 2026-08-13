@@ -64,4 +64,43 @@ export async function getTradeTape(request, response, next) {
   }
 }
 
+// A compact market watch endpoint. Trades are the source of truth for the
+// current price in this simulated exchange; symbols with resting orders are
+// included too, even before their first execution.
+export async function getStocks(_request, response, next) {
+  try {
+    const result = await pool.query(`
+      WITH symbols AS (
+        SELECT stock_symbol FROM orders
+        UNION
+        SELECT stock_symbol FROM trades
+      )
+      SELECT
+        s.stock_symbol AS symbol,
+        latest.price AS "lastPrice",
+        latest.executed_at AS "updatedAt"
+      FROM symbols s
+      LEFT JOIN LATERAL (
+        SELECT price, executed_at
+        FROM trades
+        WHERE stock_symbol = s.stock_symbol
+        ORDER BY executed_at DESC
+        LIMIT 1
+      ) latest ON true
+      ORDER BY s.stock_symbol
+    `);
+
+    return response.json({
+      stocks: result.rows.map((row) => ({
+        symbol: row.symbol,
+        lastPrice: row.lastPrice === null ? null : Number(row.lastPrice),
+        updatedAt: row.updatedAt
+      }))
+    });
+  }
+  catch (error) {
+    return next(error);
+  }
+}
+
 export { pool, redisClient };

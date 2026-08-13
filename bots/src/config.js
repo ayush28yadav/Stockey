@@ -164,7 +164,17 @@ if (env.VOLUME_MIN_QUANTITY > env.VOLUME_MAX_QUANTITY) {
 const DEFAULT_PRICES = {
     AAPL: 150,
     RELIANCE: 2500,
-    INFY: 1500
+    INFY: 1500,
+    TCS: 4000,
+    HDFCBANK: 1600,
+    GOOGL: 175,
+    AMZN: 230,
+    MSFT: 470,
+    NVDA: 130,
+    META: 620,
+    TSLA: 250,
+    SBI: 850,
+    ICICIBANK: 1250
 };
 
 export const config = {
