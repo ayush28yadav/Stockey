@@ -1,0 +1,37 @@
+.errorBoundary {
+  display: grid;
+  min-height: 100vh;
+  place-content: center;
+  justify-items: center;
+  gap: 14px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.errorBoundary h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 1.1rem;
+}
+
+.errorBoundary p {
+  margin: 0;
+  max-width: 400px;
+}
+
+.errorBoundary button {
+  margin-top: 10px;
+  padding: 8px 16px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  background: var(--surface-2);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.errorBoundary button:hover {
+  background: var(--surface-3);
+}

@@ -1,0 +1,432 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="2685.6">
+  <style type="text/css">
+    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
+    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
+  </style>
+</head>
+<body>
+<p class="p1">&lt;!DOCTYPE html&gt;</p>
+<p class="p1">&lt;html lang="en"&gt;</p>
+<p class="p1">&lt;head&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;meta charset="UTF-8"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;title&gt;Insanely Beautiful Calendar&lt;/title&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;style&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>/* --- CSS VARIABLES &amp; GLOBAL STYLES --- */</p>
+<p class="p1"><span class="Apple-converted-space">        </span>:root {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>--primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>--glass-bg: rgba(255, 255, 255, 0.65);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>--glass-border: 1px solid rgba(255, 255, 255, 0.4);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>--text-dark: #2d3748;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>--text-light: #718096;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>--accent: #667eea;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>--shadow-light: 0 10px 30px rgba(0, 0, 0, 0.1);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>--shadow-hover: 0 15px 40px rgba(0, 0, 0, 0.15);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>--today-bg: rgba(102, 126, 234, 0.25);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>--transition-speed: 0.3s;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>* {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>box-sizing: border-box;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>margin: 0;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>padding: 0;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>body {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>background: #f3f4f6;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>min-height: 100vh;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>display: flex;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>justify-content: center;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>align-items: center;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>overflow: hidden; /* Prevents scrollbars during animation */</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>/* --- BACKGROUND ANIMATION --- */</p>
+<p class="p1"><span class="Apple-converted-space">        </span>body::before {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>content: '';</p>
+<p class="p1"><span class="Apple-converted-space">            </span>position: absolute;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>top: 0;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>left: 0;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>width: 100%;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>height: 100%;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>background: linear-gradient(120deg, #fdfbfb 0%, #ebedee 100%);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>z-index: -1;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>/* Floating shapes for aesthetics */</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.shape {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>position: absolute;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>border-radius: 50%;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>background: linear-gradient(45deg, #ff9a9e 0%, #fad0c4 99%, #fad0c4 100%);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>box-shadow: 0 0 40px rgba(251, 131, 196, 0.4);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>animation: float 20s infinite linear;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>z-index: -2;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><span class="Apple-converted-space">        </span></p>
+<p class="p1"><span class="Apple-converted-space">        </span>.shape:nth-child(1) { top: -100px; left: -100px; width: 300px; height: 300px; animation-delay: 0s; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.shape:nth-child(2) { top: 50%; left: 110%; width: 400px; height: 400px; animation-delay: -7s; background: linear-gradient(to right, #a18cd1 0%, #fbc2eb 100%); }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.shape:nth-child(3) { bottom: -100px; right: -100px; width: 350px; height: 350px; animation-delay: -14s; }</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>@keyframes float {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>0% { transform: translate(0, 0) rotate(0deg); }</p>
+<p class="p1"><span class="Apple-converted-space">            </span>33% { transform: translate(0, 10px); }</p>
+<p class="p1"><span class="Apple-converted-space">            </span>66% { transform: translate(0, 0); }</p>
+<p class="p1"><span class="Apple-converted-space">            </span>100% { transform: translate(0, 0) rotate(360deg); }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>/* --- CALENDAR WIDGET --- */</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.calendar-container {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>width: 350px;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>background: var(--glass-bg);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>backdrop-filter: blur(16px);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>-webkit-backdrop-filter: blur(16px);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>border-radius: 30px;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>box-shadow: var(--shadow-light);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>border: var(--glass-border);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>position: relative;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>padding: 30px;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>opacity: 0; /* Starts invisible for animation */</p>
+<p class="p1"><span class="Apple-converted-space">            </span>animation: fadeIn 0.8s ease-out 0.5s forwards;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>display: flex;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>flex-direction: column;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>gap: 25px;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>@keyframes fadeIn {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>to { opacity: 1; transform: translateY(0); }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>/* Header */</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.calendar-header {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>display: flex;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>justify-content: space-between;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>align-items: center;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>margin-bottom: 10px;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>.month-label {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>font-size: 1.4rem;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>font-weight: 700;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>color: var(--text-dark);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>text-transform: capitalize;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>letter-spacing: 1px;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>.nav-btn {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>width: 35px;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>height: 35px;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>border: none;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>background: rgba(255, 255, 255, 0.5);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>border-radius: 50%;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>color: var(--accent);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>font-size: 1.1rem;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>cursor: pointer;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>transition: all 0.2s ease;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>display: flex;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>justify-content: center;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>align-items: center;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>.nav-btn:hover {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>background: var(--accent);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>color: white;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>transform: scale(1.05);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>/* Grid Layout */</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.calendar-grid {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>display: grid;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>grid-template-columns: repeat(7, 1fr);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>gap: 10px;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>margin: 10px 0;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>.day-name {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>font-size: 0.8rem;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>text-transform: uppercase;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>color: var(--text-light);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>font-weight: 600;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>text-align: center;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>padding: 5px 0;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>.day-cell {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>width: 45px;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>height: 45px;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>border-radius: 12px;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>display: flex;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>justify-content: center;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>align-items: center;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>cursor: pointer;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>font-size: 0.9rem;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>font-weight: 500;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>color: var(--text-dark);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>position: relative;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>/* Empty slots for previous month */</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.day-cell.empty {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>cursor: default;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>.day-cell:hover:not(.empty):not(.selected) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>background: rgba(255, 255, 255, 0.8);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>color: var(--accent);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>transform: scale(1.05);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>.day-cell.selected {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>background: var(--accent);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>color: white;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>box-shadow: 0 0 15px var(--accent);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>z-index: 1;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>.day-cell.selected::after {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>content: '';</p>
+<p class="p1"><span class="Apple-converted-space">            </span>position: absolute;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>top: 5px;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>left: 5px;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>right: 5px;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>bottom: 5px;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>background: white;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>border-radius: 50%;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>z-index: 2;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>opacity: 0.9;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>.day-cell.today {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>border: 2px solid var(--accent);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>color: var(--accent);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>/* Combined styling for "selected today" */</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.day-cell.selected.today {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>background: var(--accent);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.day-cell.selected.today::after {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>background: white;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>/* --- DATE DETAILS SECTION --- */</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.date-details {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>text-align: center;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>padding: 15px 0 5px 0;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>border-top: 1px solid rgba(0,0,0,0.05);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>.detail-month {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>font-size: 0.9rem;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>color: var(--text-light);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>font-weight: 500;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>.detail-full {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>font-size: 1.2rem;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>font-weight: 700;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>color: var(--text-dark);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>margin-top: 5px;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>transition: color 0.3s ease;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><span class="Apple-converted-space">        </span></p>
+<p class="p1"><span class="Apple-converted-space">        </span>.selected .detail-full {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>color: var(--accent);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>/* --- WEEKEND INDICATORS (Optional Visuals) --- */</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.day-cell:nth-child(7n) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>/* Saturday */</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><span class="Apple-converted-space">        </span></p>
+<p class="p1"><span class="Apple-converted-space">        </span>/* Custom Saturday styling to distinguish */</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.day-cell:nth-last-child(1),<span class="Apple-converted-space"> </span></p>
+<p class="p1"><span class="Apple-converted-space">        </span>.day-cell:nth-last-child(2) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>background: rgba(0,0,0,0.03);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><span class="Apple-converted-space">        </span></p>
+<p class="p1"><span class="Apple-converted-space">        </span>/* Hover effect for weekends */</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.day-cell:nth-child(7n):hover:not(.empty) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>background: rgba(255, 235, 238, 0.3);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/style&gt;</p>
+<p class="p1">&lt;/head&gt;</p>
+<p class="p1">&lt;body&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;!-- Background Shapes for Vibe --&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="shape"&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="shape"&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="shape"&gt;&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;!-- Calendar Component --&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="calendar-container" id="calendar"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="calendar-header"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;button class="nav-btn" id="prev"&gt;&amp;#8592;&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="month-label" id="month-display"&gt;September 2023&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;button class="nav-btn" id="next"&gt;&amp;#8594;&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="calendar-grid"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;!-- Day Headers --&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="day-name"&gt;Su&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="day-name"&gt;Mo&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="day-name"&gt;Tu&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="day-name"&gt;We&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="day-name"&gt;Th&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="day-name"&gt;Fr&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="day-name"&gt;Sa&lt;/div&gt;</p>
+<p class="p2"><span class="Apple-converted-space">            </span></p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;!-- Dynamic Days Will Be Inserted Here --&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="calendar-grid-container" id="days-grid"&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="date-details"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="detail-month" id="selected-month"&gt;September&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="detail-full" id="selected-date"&gt;24&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;script&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>// --- LOGIC ---</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const calendar = document.getElementById('calendar');</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const daysGrid = document.getElementById('days-grid');</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const monthDisplay = document.getElementById('month-display');</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const prevBtn = document.getElementById('prev');</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const nextBtn = document.getElementById('next');</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const detailMonth = document.getElementById('selected-month');</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const detailFull = document.getElementById('selected-date');</p>
+<p class="p2"><span class="Apple-converted-space">        </span></p>
+<p class="p1"><span class="Apple-converted-space">        </span>let currentDate = new Date();</p>
+<p class="p2"><span class="Apple-converted-space">        </span></p>
+<p class="p1"><span class="Apple-converted-space">        </span>// Month Names array for easy lookup</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const monthNames = ["January", "February", "March", "April", "May", "June",<span class="Apple-converted-space"> </span></p>
+<p class="p1"><span class="Apple-converted-space">                           </span>"July", "August", "September", "October", "November", "December"];</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>function renderCalendar() {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const currentYear = currentDate.getFullYear();</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const currentMonth = currentDate.getMonth();</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>// Update Header</p>
+<p class="p1"><span class="Apple-converted-space">            </span>monthDisplay.textContent = `${monthNames[currentMonth]} ${currentYear}`;</p>
+<p class="p2"><span class="Apple-converted-space">            </span></p>
+<p class="p1"><span class="Apple-converted-space">            </span>// Determine days in current month</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();</p>
+<p class="p2"><span class="Apple-converted-space">            </span></p>
+<p class="p1"><span class="Apple-converted-space">            </span>// Determine padding from previous month</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const daysInPrevMonth = new Date(currentYear, currentMonth, 0).getDate();</p>
+<p class="p2"><span class="Apple-converted-space">            </span></p>
+<p class="p1"><span class="Apple-converted-space">            </span>// Get day of week for the 1st of current month (0=Sun, 1=Mon)</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const firstDayIndex = new Date(currentYear, currentMonth, 1).getDay();</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>let gridContainer = document.getElementById('days-grid');</p>
+<p class="p1"><span class="Apple-converted-space">            </span>gridContainer.innerHTML = ''; // Clear previous days</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>let today = new Date();</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>// Render empty slots for previous month days</p>
+<p class="p1"><span class="Apple-converted-space">            </span>for (let i = 0; i &lt; firstDayIndex; i++) {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>const blank = document.createElement('div');</p>
+<p class="p1"><span class="Apple-converted-space">                </span>blank.classList.add('day-cell', 'empty');</p>
+<p class="p1"><span class="Apple-converted-space">                </span>gridContainer.appendChild(blank);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>// Render current month days</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const todayDateObj = new Date();</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const todayDate = todayDateObj.getDate();</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>// Create Date Objects for Today and Selection</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const todayDateObjFull = new Date(currentYear, currentMonth, todayDate);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>for (let i = 1; i &lt;= daysInMonth; i++) {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>const dayDiv = document.createElement('div');</p>
+<p class="p1"><span class="Apple-converted-space">                </span>dayDiv.classList.add('day-cell');</p>
+<p class="p1"><span class="Apple-converted-space">                </span>dayDiv.textContent = i;</p>
+<p class="p2"><span class="Apple-converted-space">                </span></p>
+<p class="p1"><span class="Apple-converted-space">                </span>// Check if it's today</p>
+<p class="p1"><span class="Apple-converted-space">                </span>if (i === todayDate &amp;&amp; currentMonth === today.getMonth() &amp;&amp; currentYear === today.getFullYear()) {</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>dayDiv.classList.add('today');</p>
+<p class="p1"><span class="Apple-converted-space">                </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">                </span>// Selection Logic (if we were in a different selected state, we'd store state)</p>
+<p class="p1"><span class="Apple-converted-space">                </span>// For simplicity, this calendar resets selection to "Today" every time we open</p>
+<p class="p1"><span class="Apple-converted-space">                </span>// To make it persist, we would add an event listener here.</p>
+<p class="p1"><span class="Apple-converted-space">                </span>// For this widget, clicking any date sets that date as "Selected".</p>
+<p class="p2"><span class="Apple-converted-space">                </span></p>
+<p class="p1"><span class="Apple-converted-space">                </span>dayDiv.onclick = () =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>// Update details text</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>// We need to calculate the string for the selected date dynamically</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>// For now, let's just update the container</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>const currentMonthName = monthNames[currentMonth];</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>detailMonth.textContent = currentMonthName;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>detailFull.textContent = i;</p>
+<p class="p2"><span class="Apple-converted-space">                    </span></p>
+<p class="p1"><span class="Apple-converted-space">                    </span>// Highlight logic</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>daysGrid.querySelectorAll('.day-cell').forEach(c =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>c.classList.remove('selected');</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>});</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>dayDiv.classList.add('selected');</p>
+<p class="p2"><span class="Apple-converted-space">                    </span></p>
+<p class="p1"><span class="Apple-converted-space">                    </span>// Re-position "Today" dot based on current system date vs selected date</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>// (Note: For a pure demo without a "state" variable, we highlight Today AND the Clicked Day)</p>
+<p class="p2"><span class="Apple-converted-space">                    </span></p>
+<p class="p1"><span class="Apple-converted-space">                    </span>// Visual Feedback for Animation</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>daysGrid.style.transform = 'scale(0.95)';</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>setTimeout(() =&gt; { daysGrid.style.transform = 'scale(1)'; }, 100);</p>
+<p class="p1"><span class="Apple-converted-space">                </span>};</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">                </span>gridContainer.appendChild(dayDiv);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>prevBtn.addEventListener('click', () =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>currentDate.setMonth(currentDate.getMonth() - 1);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>renderCalendar();</p>
+<p class="p1"><span class="Apple-converted-space">        </span>});</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>nextBtn.addEventListener('click', () =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>currentDate.setMonth(currentDate.getMonth() + 1);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>renderCalendar();</p>
+<p class="p1"><span class="Apple-converted-space">        </span>});</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>// Initialize</p>
+<p class="p1"><span class="Apple-converted-space">        </span>renderCalendar();</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>// --- SELECTED DATE LOGIC UPDATE ---</p>
+<p class="p1"><span class="Apple-converted-space">        </span>// This simple script adds the ability to click a day, update the bottom text, and highlight it</p>
+<p class="p1"><span class="Apple-converted-space">        </span>daysGrid.addEventListener('click', (e) =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>// If clicking a specific day cell</p>
+<p class="p1"><span class="Apple-converted-space">            </span>if(e.target.classList.contains('day-cell') &amp;&amp; !e.target.classList.contains('empty')){</p>
+<p class="p1"><span class="Apple-converted-space">                </span>e.target.classList.add('selected');</p>
+<p class="p1"><span class="Apple-converted-space">                </span>// Update bottom text</p>
+<p class="p1"><span class="Apple-converted-space">                </span>detailMonth.textContent = monthNames[currentDate.getMonth()];</p>
+<p class="p1"><span class="Apple-converted-space">                </span>detailFull.textContent = e.target.textContent;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>});</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>// Add a "Reset to Today" button functionality via the "Today" class click?</p>
+<p class="p1"><span class="Apple-converted-space">        </span>// Actually, let's listen for clicks on "Today" specifically to reset the selection</p>
+<p class="p1"><span class="Apple-converted-space">        </span>document.addEventListener('click', (e) =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const todayBtn = document.querySelector('.day-cell.today');</p>
+<p class="p1"><span class="Apple-converted-space">            </span>if(e.target === todayBtn &amp;&amp; todayBtn.classList.contains('today')){</p>
+<p class="p1"><span class="Apple-converted-space">                </span>// Logic to reset calendar date</p>
+<p class="p1"><span class="Apple-converted-space">                </span>currentDate = new Date();</p>
+<p class="p1"><span class="Apple-converted-space">                </span>renderCalendar();</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>});</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/script&gt;</p>
+<p class="p1">&lt;/body&gt;</p>
+<p class="p1">&lt;/html&gt;</p>
+</body>
+</html>

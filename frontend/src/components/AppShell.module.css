@@ -1,0 +1,152 @@
+.shell {
+  display: grid;
+  min-height: 100vh;
+  grid-template-columns: 62px minmax(0, 1fr);
+  background: var(--canvas);
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  height: 100vh;
+  flex-direction: column;
+  align-items: center;
+  border-right: 1px solid var(--line);
+  background: var(--sidebar);
+  z-index: 10;
+}
+
+.railBrand {
+  display: grid;
+  width: 100%;
+  height: 62px;
+  place-items: center;
+  border-bottom: 1px solid var(--line);
+}
+
+.nav {
+  display: grid;
+  width: 100%;
+  gap: 6px;
+  padding: 15px 11px;
+}
+
+.navButton,
+.bottomButton {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  margin: auto;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  color: #8c949d;
+  background: transparent;
+  transition: all 0.15s ease;
+}
+
+.navButton:hover,
+.navButton.active {
+  color: var(--green);
+  background: #173520;
+}
+
+.sidebarBottom {
+  display: grid;
+  gap: 5px;
+  margin-top: auto;
+  padding: 14px 0;
+  border-top: 1px solid var(--line);
+}
+
+.bottomButton:hover {
+  color: white;
+  background: #ffffff0d;
+}
+
+.scrim {
+  display: none;
+}
+
+.content {
+  min-width: 0;
+}
+
+.topbar {
+  display: flex;
+  height: 62px;
+  align-items: center;
+  gap: 14px;
+  padding: 0 18px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.search {
+  display: flex;
+  width: min(350px, 40vw);
+  height: 39px;
+  align-items: center;
+  gap: 9px;
+  padding: 0 12px;
+  border-radius: 22px;
+  color: var(--muted);
+  background: var(--surface-3);
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.search:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px #4b77d120;
+}
+
+.searchInput {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  color: var(--ink);
+  background: transparent;
+  font-size: 0.78rem;
+}
+
+.search kbd {
+  color: var(--faint);
+  font: 500 0.64rem 'DM Mono', monospace;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.balance {
+  display: flex;
+  height: 36px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 11px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font: 500 0.72rem 'DM Mono', monospace;
+}
+
+.avatar {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  color: #fff;
+  background: #a8643c;
+  font-weight: 700;
+}
+
+.page {
+  min-height: calc(100vh - 62px);
+}

@@ -1,0 +1,222 @@
+.panel {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  transition: border-color 0.15s ease;
+}
+
+.header,
+.panelTitle {
+  display: flex;
+  min-height: 45px;
+  align-items: center;
+  gap: 9px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.78rem;
+}
+
+.header > :last-child {
+  margin-left: auto;
+  color: var(--muted);
+}
+
+.instrument {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 14px 13px;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.8rem;
+}
+
+.instrument .logo {
+  width: 27px;
+  height: 27px;
+}
+
+.instrument > span:not(.logo) {
+  font: 500 0.72rem 'DM Mono', monospace;
+}
+
+.instrument small {
+  grid-column: 3;
+  color: var(--green);
+  font-size: 0.6rem;
+  text-align: right;
+}
+
+.tradeTicket form {
+  display: grid;
+  gap: 16px;
+  padding: 13px;
+}
+
+.toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 3px;
+  border-radius: 5px;
+  background: var(--surface-2);
+}
+
+.toggle button {
+  height: 33px;
+  border: 0;
+  border-radius: 4px;
+  color: var(--ink);
+  background: transparent;
+  font-size: 0.74rem;
+  font-weight: 700;
+  transition: all 0.12s ease;
+}
+
+.toggle button.active {
+  background: var(--surface-3);
+}
+
+.toggle button.active.buy {
+  color: var(--green);
+}
+
+.toggle button.active.sell {
+  color: var(--red);
+}
+
+.field {
+  display: grid;
+  grid-template-columns: 1fr 1.25fr;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink);
+  font-size: 0.66rem;
+}
+
+.field select {
+  height: 33px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 0 8px;
+  color: var(--ink);
+  background: var(--surface-2);
+  font-size: 0.67rem;
+  transition: border-color 0.15s ease;
+}
+
+.field select:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.stepper {
+  display: grid;
+  height: 33px;
+  grid-template-columns: 30px 1fr 30px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--surface-2);
+}
+
+.stepper button {
+  border: 0;
+  color: var(--ink);
+  background: transparent;
+  font-size: 1rem;
+  transition: background 0.12s ease;
+}
+
+.stepper button:hover {
+  background: var(--surface-3);
+}
+
+.stepper input {
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  color: var(--ink);
+  background: transparent;
+  text-align: center;
+  font: 500 0.68rem 'DM Mono', monospace;
+}
+
+.total {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.total strong {
+  color: var(--ink);
+  font: 500 0.72rem 'DM Mono', monospace;
+}
+
+.allocation {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.61rem;
+}
+
+.allocation div {
+  display: grid;
+  height: 7px;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(4, 1fr);
+  overflow: hidden;
+  gap: 2px;
+}
+
+.allocation i {
+  background: var(--green);
+}
+
+.allocation i:last-child {
+  background: var(--red);
+}
+
+.allocation span:nth-child(2) b {
+  color: var(--green);
+}
+
+.allocation span:last-child {
+  text-align: right;
+}
+
+.allocation span:last-child b {
+  color: var(--red);
+}
+
+.submit {
+  min-height: 38px;
+  border: 0;
+  border-radius: 5px;
+  color: #08100a;
+  background: var(--green);
+  font-size: 0.8rem;
+  font-weight: 700;
+  transition: all 0.15s ease;
+}
+
+.submit:hover {
+  filter: brightness(1.1);
+}
+
+.submit.sell {
+  color: white;
+  background: var(--red);
+}
+
+.note {
+  margin: 0;
+  color: var(--faint);
+  font-size: 0.59rem;
+  text-align: center;
+}

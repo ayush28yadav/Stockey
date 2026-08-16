@@ -1,0 +1,19 @@
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink);
+  font-weight: 700;
+  letter-spacing: -0.8px;
+  transition: opacity 0.2s;
+}
+
+.brandMark {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  color: #fff;
+  background: linear-gradient(135deg, #5f8eff, #2e54ad);
+  border-radius: 6px;
+}

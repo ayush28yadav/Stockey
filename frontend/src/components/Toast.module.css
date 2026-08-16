@@ -1,0 +1,47 @@
+.toast {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 50;
+  display: flex;
+  max-width: min(390px, calc(100% - 36px));
+  align-items: center;
+  gap: 8px;
+  padding: 11px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  background: var(--surface-3);
+  box-shadow: 0 12px 35px #0007;
+  font-size: 0.72rem;
+  animation: toast-in 0.25s ease;
+}
+
+.toast > span {
+  color: var(--green);
+}
+
+.toast.error > span {
+  color: var(--red);
+}
+
+.toast button {
+  display: grid;
+  margin-left: 7px;
+  place-items: center;
+  border: 0;
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

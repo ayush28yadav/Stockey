@@ -1,0 +1,49 @@
+.iconButton {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--muted);
+  background: var(--surface);
+  transition: all 0.15s ease;
+}
+
+.iconButton:hover {
+  color: var(--ink);
+  border-color: var(--surface-3);
+  background: var(--surface-2);
+}
+
+.badge {
+  padding: 3px 6px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  color: var(--muted);
+  background: var(--surface-2);
+  font-size: 0.57rem;
+  text-transform: uppercase;
+  transition: all 0.15s ease;
+}
+
+.badge.success {
+  border-color: #1b7335;
+  color: var(--green);
+  background: var(--green-soft);
+}
+
+.emptyState {
+  display: grid;
+  min-height: 105px;
+  gap: 6px;
+  place-content: center;
+  justify-items: center;
+  color: var(--faint);
+  font-size: 0.65rem;
+  text-align: center;
+}
+
+.emptyState strong {
+  color: var(--muted);
+}
