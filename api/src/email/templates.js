@@ -115,6 +115,18 @@ function formatDateIST(date) {
     }) + ' IST';
 }
 
+// Escape user-controlled values before interpolating into HTML email bodies so
+// a crafted value cannot inject markup or scripts into brand-trusted emails.
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    })[char]);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Template 1: Trade Confirmation
 // ─────────────────────────────────────────────────────────────────────────────
@@ -140,7 +152,7 @@ export function tradeConfirmationEmail({ side, stockSymbol, quantity, price, tot
     const actionColor = side === 'buy' ? '#22c55e' : '#ef4444';   // green / red
     const actionEmoji = side === 'buy' ? '🟢' : '🔴';
 
-    const subject = `${actionEmoji} Trade Executed — ${actionVerb} ${quantity} × ${stockSymbol}`;
+    const subject = `${actionEmoji} Trade Executed — ${actionVerb} ${quantity} × ${escapeHtml(stockSymbol)}`;
 
     const html = emailLayout(`
       <!-- Headline -->
@@ -161,7 +173,7 @@ export function tradeConfirmationEmail({ side, stockSymbol, quantity, price, tot
             <span style="background:${actionColor}22;color:${actionColor};
                           font-weight:700;font-size:13px;padding:4px 12px;
                           border-radius:20px;border:1px solid ${actionColor}44;">
-              ${actionVerb} ${stockSymbol}
+              ${actionVerb} ${escapeHtml(stockSymbol)}
             </span>
           </td>
         </tr>
@@ -203,7 +215,7 @@ export function tradeConfirmationEmail({ side, stockSymbol, quantity, price, tot
           <td style="padding:12px 20px;color:#94a3b8;font-size:13px;">Order ID</td>
           <td style="padding:12px 20px;color:#6366f1;font-size:11px;
                       font-family:monospace;text-align:right;word-break:break-all;">
-            ${orderId}
+            ${escapeHtml(orderId)}
           </td>
         </tr>
       </table>
@@ -248,7 +260,9 @@ export function tradeConfirmationEmail({ side, stockSymbol, quantity, price, tot
  * @returns {{ subject: string, html: string, text: string }}
  */
 export function otpEmail({ otp, action }) {
-    const subject = `🔐 Your Stockey verification code: ${otp}`;
+    // The OTP deliberately does NOT go in the subject line to avoid leaking it
+    // via subject previews/archives; it only appears in the body.
+    const subject = `🔐 Your Stockey verification code`;
 
     const html = emailLayout(`
       <!-- Headline -->
@@ -256,7 +270,7 @@ export function otpEmail({ otp, action }) {
         Verification Code
       </h2>
       <p style="margin:0 0 28px;color:#94a3b8;font-size:14px;line-height:1.6;">
-        You requested a one-time password to <strong style="color:#e2e8f0;">${action}</strong>.
+        You requested a one-time password to <strong style="color:#e2e8f0;">${escapeHtml(action)}</strong>.
         Enter the code below to continue. It expires in <strong style="color:#e2e8f0;">10 minutes</strong>.
       </p>
 
@@ -327,7 +341,7 @@ export function dailyPnlEmail({ email, cashBalance, holdings, totalPnl, date }) 
     const pnlSign = pnlPositive ? '+' : '';
     const dateLabel = formatDateIST(date).split(',')[0]; // e.g. "11 Aug 2026"
 
-    const subject = `📊 Daily Portfolio Summary — ${dateLabel} | ${pnlSign}${formatCurrency(totalPnl)}`;
+    const subject = `📊 Daily Portfolio Summary — ${escapeHtml(dateLabel)} | ${pnlSign}${formatCurrency(totalPnl)}`;
 
     // Build a table row for each holding.
     const holdingRows = holdings.map((h, i) => {
@@ -340,7 +354,7 @@ export function dailyPnlEmail({ email, cashBalance, holdings, totalPnl, date }) 
         return `
           <tr style="${rowBg}">
             <td style="padding:10px 16px;color:#f1f5f9;font-weight:600;font-size:13px;">
-              ${h.stock_symbol}
+              ${escapeHtml(h.stock_symbol)}
             </td>
             <td style="padding:10px 16px;color:#94a3b8;font-size:13px;text-align:right;">
               ${Number(h.quantity).toLocaleString('en-IN')}
@@ -391,7 +405,7 @@ export function dailyPnlEmail({ email, cashBalance, holdings, totalPnl, date }) 
         Daily Portfolio Summary
       </h2>
       <p style="margin:0 0 24px;color:#94a3b8;font-size:13px;">
-        Market closed for ${dateLabel}
+        Market closed for ${escapeHtml(dateLabel)}
       </p>
 
       <!-- Total P&L hero card -->

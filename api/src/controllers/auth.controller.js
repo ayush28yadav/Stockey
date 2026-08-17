@@ -14,7 +14,7 @@
 */
 import bcrypt from 'bcrypt';
 import passport from 'passport';
-import { randomInt } from 'node:crypto'; // used to generate cryptographically random OTPs
+import { randomInt, timingSafeEqual } from 'node:crypto'; // used to generate cryptographically random OTPs
 import { z } from 'zod';
 import { config } from '../config.js';
 import { pool } from '../db.js';
@@ -26,6 +26,9 @@ const credentialsSchema = z.object({
     email: z.string().trim().email().max(320).transform((email) => email.toLowerCase()),
     password: z.string().min(12).max(72)
 });
+// A real bcrypt hash used to equalize login timing for unknown emails so the
+// response latency cannot be used to enumerate registered accounts.
+const DUMMY_PASSWORD_HASH = '$2b$12$9utrAw96bb3tVLxO5RH0ZuBSUuqTB80i26FhfK46wylNYFXfc8t0C';
 const publicUser = (user) => ({
     id: user.id,
     email: user.email,
@@ -55,7 +58,11 @@ export async function login(request, response, next) {
             return response.status(400).json({ error: 'INVALID_CREDENTIALS' });
         const result = await pool.query('SELECT id, email, password_hash, oauth_provider, oauth_id FROM users WHERE email = $1', [parsed.data.email]);
         const user = result.rows[0];
-        const valid = user?.password_hash ? await bcrypt.compare(parsed.data.password, user.password_hash) : false;
+        // Always run a bcrypt compare (against a dummy hash when the account is
+        // missing or OAuth-only) so response timing cannot reveal whether an
+        // email is registered.
+        const comparedHash = user?.password_hash || DUMMY_PASSWORD_HASH;
+        const valid = await bcrypt.compare(parsed.data.password, comparedHash);
         if (!valid || !user)
             return response.status(401).json({ error: 'INVALID_EMAIL_OR_PASSWORD' });
         const session = await issueSession(user, request, response);
@@ -121,7 +128,11 @@ const otpSendSchema = z.object({
 
 // Zod schema for the OTP verify request.
 const otpVerifySchema = z.object({
-    otp: z.string().length(6).regex(/^\d{6}$/, 'OTP must be exactly 6 digits')
+    otp: z.string().length(6).regex(/^\d{6}$/, 'OTP must be exactly 6 digits'),
+    // Optional action binding: when supplied, the submitted OTP only verifies
+    // if it was issued for the same action. Prevents using a code minted for
+    // one operation against another.
+    action: z.string().trim().min(3).max(80).optional()
 });
 
 // Redis key pattern for OTPs. TTL is 10 minutes (600 seconds).
@@ -129,6 +140,17 @@ const otpVerifySchema = z.object({
 // requesting a new OTP invalidates the previous one automatically.
 const OTP_TTL_SECONDS = 600;
 const otpKey = (userId) => `OTP:${userId}`;
+
+// Brute-force protection: per-user failed-attempt counter for the 6-digit OTP.
+// 5 wrong guesses lock the user out until the OTP window expires.
+const OTP_ATTEMPTS_MAX = 5;
+const otpAttemptsKey = (userId) => `OTP_ATTEMPTS:${userId}`;
+
+async function incrementOtpAttempts(userId) {
+    const attemptsKey = otpAttemptsKey(userId);
+    await redisClient.incr(attemptsKey);
+    await redisClient.expire(attemptsKey, OTP_TTL_SECONDS);
+}
 
 /**
  * POST /api/auth/otp/send
@@ -156,11 +178,17 @@ export async function sendOtp(request, response, next) {
         // zero-pad it to 6 characters so short codes (e.g. 42) become "000042".
         const otp = String(randomInt(0, 1_000_000)).padStart(6, '0');
 
-        // Store the OTP in Redis with a 10-minute TTL.
+        // Store the OTP in Redis with a 10-minute TTL, bound to the action it
+        // protects so a code minted for one operation cannot be replayed
+        // against another.
         // `SET key value EX seconds` atomically creates the key and sets the TTL.
         // If the user requests a new OTP before the old one expires, this
         // overwrites the old one — effectively invalidating it.
-        await redisClient.set(otpKey(userId), otp, { EX: OTP_TTL_SECONDS });
+        await redisClient.set(otpKey(userId), JSON.stringify({ otp, action: parsed.data.action }), { EX: OTP_TTL_SECONDS });
+
+        // Reset the per-user failed-attempt counter so a new, correctly-known
+        // code starts with a clean slate.
+        await redisClient.del(otpAttemptsKey(userId));
 
         // Enqueue the email asynchronously. The user gets the 204 response
         // immediately without waiting for SMTP.
@@ -196,25 +224,54 @@ export async function verifyOtp(request, response, next) {
             return response.status(400).json({ error: 'INVALID_REQUEST', details: parsed.error.flatten().fieldErrors });
 
         const { userId } = request.auth;
-        const { otp } = parsed.data;
+        const { otp, action } = parsed.data;
+
+        // Per-user brute-force lockout: stop responding to guesses once the
+        // counter is exhausted (the key auto-expires with the OTP window).
+        const attempts = Number(await redisClient.get(otpAttemptsKey(userId)) ?? '0');
+        if (attempts >= OTP_ATTEMPTS_MAX)
+            return response.status(429).json({ error: 'TOO_MANY_OTP_ATTEMPTS' });
 
         // Retrieve the stored OTP from Redis.
         const stored = await redisClient.get(otpKey(userId));
 
         if (!stored) {
             // Key doesn't exist: OTP never generated or it expired.
+            await incrementOtpAttempts(userId);
             return response.status(401).json({ error: 'OTP_INVALID' });
         }
 
-        // Compare the submitted OTP with the stored one.
-        // Both values are plain strings of equal length so a direct equality
-        // check is safe here. For TOTP or longer secrets, use timingSafeEqual.
-        if (otp !== stored) {
+        // The record is JSON `{ otp, action }`; tolerate legacy plaintext codes.
+        let expectedOtp = stored;
+        let expectedAction = null;
+        try {
+            const parsedStored = JSON.parse(stored);
+            if (parsedStored && typeof parsedStored.otp === 'string') {
+                expectedOtp = parsedStored.otp;
+                expectedAction = typeof parsedStored.action === 'string' ? parsedStored.action : null;
+            }
+        } catch {
+            // Legacy plain-text OTP value — keep as-is.
+        }
+
+        // Constant-time comparison for the 6-digit code.
+        const sameLength = expectedOtp.length === otp.length;
+        const codeMatches = sameLength && timingSafeEqual(Buffer.from(expectedOtp), Buffer.from(otp));
+
+        // If the caller bound this verification to an action, the code must
+        // have been minted for that exact action.
+        const actionBound = expectedAction !== null;
+        const actionMismatch = action !== undefined && actionBound && expectedAction !== action;
+
+        if (!codeMatches || actionMismatch) {
+            await incrementOtpAttempts(userId);
             return response.status(401).json({ error: 'OTP_INVALID' });
         }
 
-        // ✅ OTP matched — delete it immediately so it cannot be reused.
+        // ✅ OTP matched — delete it (and the attempt counter) so it cannot be
+        // reused.
         await redisClient.del(otpKey(userId));
+        await redisClient.del(otpAttemptsKey(userId));
 
         return response.json({ success: true });
     }

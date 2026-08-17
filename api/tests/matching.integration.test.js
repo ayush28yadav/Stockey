@@ -157,6 +157,48 @@ test('partially fills a large limit buy order against smaller sell liquidity', a
   assert.equal(tradeResult.rows[0].quantity, 5);
 });
 
+test('does not match a user against their own orders (no wash trading)', async () => {
+    const symbol = uniqueSymbol();
+    const traderEmail = `integration-matching-self-${randomUUID()}@example.test`;
+    const trader = await createUser(traderEmail);
+
+  await pool.query(
+    'INSERT INTO portfolio_holdings (user_id, stock_symbol, quantity, avg_buy_price) VALUES ($1, $2, $3, $4)',
+    [trader.userId, symbol, 100, 100]
+  );
+
+  const sellOrder = await placeOrder(trader.accessToken, {
+    stockSymbol: symbol,
+    orderType: 'limit',
+    side: 'sell',
+    price: 100,
+    quantity: 10
+  });
+
+  const buyOrder = await placeOrder(trader.accessToken, {
+    stockSymbol: symbol,
+    orderType: 'limit',
+    side: 'buy',
+    price: 100,
+    quantity: 10
+  });
+
+  // Give the matching worker time to try (and refuse) to match the pair.
+  const processed = await waitFor(async () => {
+    const sellStatus = await orderStatus(sellOrder.order.id);
+    const buyStatus = await orderStatus(buyOrder.order.id);
+    return sellStatus !== null && buyStatus !== null;
+  }, 8000);
+
+  assert(processed, 'Orders were not processed within timeout');
+
+  const trades = await pool.query(
+    'SELECT * FROM trades WHERE (buy_order_id = $1 AND sell_order_id = $2) OR (buy_order_id = $2 AND sell_order_id = $1)',
+    [buyOrder.order.id, sellOrder.order.id]
+  );
+  assert.equal(trades.rowCount, 0, 'an account must never settle against its own orders');
+});
+
 test('cancels market orders when no opposite liquidity exists', async () => {
     const symbol = uniqueSymbol();
     const buyerEmail = `integration-matching-buyer-${randomUUID()}@example.test`;

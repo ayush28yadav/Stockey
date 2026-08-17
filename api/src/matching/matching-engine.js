@@ -47,6 +47,22 @@ function cents(value) {
     return Math.round(parsed * 100);
 }
 
+// Strip internal user identity from orders broadcast to public channels.
+// The order book and live trade tape are unauthenticated, so internal
+// user IDs must never be exposed to other traders.
+function toPublicOrder(order) {
+    return {
+        id: order.id,
+        stockSymbol: order.stock_symbol,
+        orderType: order.order_type,
+        side: order.side,
+        price: order.price === null ? null : Number(order.price),
+        quantity: order.quantity,
+        filledQuantity: order.filled_quantity,
+        status: order.status
+    };
+}
+
 // Determine next order status after executing `executedQuantity`.
 // If `cancelRemainder` is true then any remaining quantity is
 // immediately cancelled instead of staying open.
@@ -79,7 +95,7 @@ export class MatchingEngine {
             if (!incoming || !isOpen(incoming))
                 return;
             while (incoming && isOpen(incoming)) {
-                const resting = await this.bestOppositeOrder(incoming.stock_symbol, incoming.side);
+                const resting = await this.bestOppositeOrder(incoming.stock_symbol, incoming.side, incoming.user_id);
                 if (!resting)
                     break;
                 if (!this.canMatch(incoming, resting))
@@ -117,24 +133,31 @@ export class MatchingEngine {
     orderKey(orderId) {
         return `ORDER:${orderId}`;
     }
-    async bestOppositeOrder(symbol, incomingSide) {
+    async bestOppositeOrder(symbol, incomingSide, excludeUserId = null) {
         const restingSide = incomingSide === 'buy' ? 'sell' : 'buy';
-        const members = await this.redis.zrange(this.bookKey(symbol, restingSide), 0, 0);
-        if (!members[0])
-            return null;
-        const separator = members[0].indexOf(':');
-        if (separator === -1)
-            return null;
-        const orderId = members[0].slice(separator + 1);
-        const order = await this.getOrder(orderId);
-        if (!order || !isOpen(order)) {
-            if (order)
+        // Scan the first 100 price levels (mirrors the public order-book depth).
+        // We skip past stale/self-owned entries so the taker always executes
+        // against the best *other-user* liquidity (prevents wash trading).
+        const members = await this.redis.zrange(this.bookKey(symbol, restingSide), 0, 99);
+        for (const member of members) {
+            const separator = member.indexOf(':');
+            if (separator === -1)
+                continue;
+            const orderId = member.slice(separator + 1);
+            const order = await this.getOrder(orderId);
+            if (!order) {
+                await this.redis.zrem(this.bookKey(symbol, restingSide), member);
+                continue;
+            }
+            if (!isOpen(order)) {
                 await this.syncOrderBook(order);
-            else
-                await this.redis.zrem(this.bookKey(symbol, restingSide), members[0]);
-            return null;
+                continue;
+            }
+            if (excludeUserId && order.user_id === excludeUserId)
+                continue; // self-match — never trade with yourself
+            return order;
         }
-        return order;
+        return null;
     }
     canMatch(incoming, resting) {
         if (incoming.stock_symbol !== resting.stock_symbol || incoming.side === resting.side)
@@ -162,6 +185,14 @@ export class MatchingEngine {
             if (!isOpen(incoming) || !isOpen(resting) || !this.canMatch(incoming, resting)) {
                 await client.query('COMMIT');
                 return { executedQuantity: 0, orders: [incoming, resting] };
+            }
+            // Wash-trading guard (defense in depth): never settle two orders
+            // owned by the same user, even if a self-owned entry reaches
+            // settlement. bestOppositeOrder normally filters these out, so in
+            // practice the loop will simply move on to the next match.
+            if (incoming.user_id === resting.user_id) {
+                await client.query('COMMIT');
+                return { executedQuantity: 0, orders: [incoming] };
             }
             const buyOrder = incoming.side === 'buy' ? incoming : resting;
             const sellOrder = incoming.side === 'sell' ? incoming : resting;
@@ -212,8 +243,8 @@ export class MatchingEngine {
             await client.query('COMMIT');
             const bookUpdate = {
                 symbol: buyOrder.stock_symbol,
-                buyOrder: updatedBuy,
-                sellOrder: updatedSell,
+                buyOrder: toPublicOrder(updatedBuy),
+                sellOrder: toPublicOrder(updatedSell),
                 executedQuantity: quantity,
                 price: executionPrice,
                 timestamp: new Date().toISOString()

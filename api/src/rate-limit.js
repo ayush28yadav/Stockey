@@ -11,3 +11,13 @@ export const authLimiter = rateLimit({
     legacyHeaders: false,
     message: { error: 'TOO_MANY_AUTH_ATTEMPTS' }
 });
+
+// General-purpose limiter for unauthenticated public endpoints (order book,
+// trade tape, stock list). Prevents cheap Redis/DB amplification.
+export const publicLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    limit: config.NODE_ENV === 'production' ? 120 : 5000,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    message: { error: 'TOO_MANY_REQUESTS' }
+});

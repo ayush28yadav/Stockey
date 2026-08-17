@@ -94,11 +94,11 @@ export const notificationsQueue = new QueueCjs('notifications', {
  */
 export async function enqueueTradeConfirmation(payload) {
     // Use a composite job ID to prevent duplicate emails if the matching engine
-    // retries. Format: "trade-confirm:{orderId}" is unique per order.
+    // retries. Format: "trade-confirm-{orderId}" is unique per order.
     return notificationsQueue.add(
         'trade-confirmation',
         payload,
-        { jobId: `trade-confirm:${payload.orderId}` }
+        { jobId: `trade-confirm-${payload.orderId}` }
     );
 }
 
@@ -149,7 +149,7 @@ export async function enqueueDailyPnlEmail(payload) {
         payload,
         {
             priority: 8,  // lowest priority — bulk operation
-            jobId: `daily-pnl:${payload.userId}:${dateKey}`
+            jobId: `daily-pnl-${payload.userId}-${dateKey}`
         }
     );
 }

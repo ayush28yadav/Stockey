@@ -12,6 +12,8 @@ docker compose up --build
 
 This one command starts the frontend, API, PostgreSQL, and Redis. Open `http://localhost:5173`. The API is at `http://localhost:4000`; `GET /health` confirms its dependencies are ready.
 
+> **Secrets & local overrides.** Copy the repo-root [`.env.example`](./.env.example) to `.env` and set `POSTGRES_PASSWORD`, `REDIS_PASSWORD` and (only if you use the bots profile) `BOT_PASSWORD`. Docker Compose reads this file automatically. Development fallbacks exist in `docker-compose.yml` but the PostgreSQL/Redis ports are bound to loopback only — never deploy these defaults outside a throwaway local environment. **If you already created the `postgres_data` volume with an earlier password, run `docker compose down -v` once** so the database is re-initialised with the configured password.
+
 On its first start, the API automatically creates `api/.env` with a development RSA key pair and session secret. It never overwrites an existing file. Treat that file as a secret; it is ignored by Git.
 
 ## Enable Google OAuth
@@ -57,6 +59,8 @@ docker compose --profile bots up --build
 ```
 
 This starts the bot service alongside the API, frontend, PostgreSQL, and Redis. On first start, the service seeds `BOT_COUNT` bot accounts (with cash balances and share holdings) directly into PostgreSQL, then each bot logs in via the API and begins its tick loop.
+
+**You must set `BOT_PASSWORD`** in the repo-root `.env` first — the bots service deliberately has no default password (a predictable one would let anyone log in as the funded bot accounts) and will exit with a configuration error if it is missing or equals the old example value.
 
 ### Bot strategies
 

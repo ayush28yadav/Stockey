@@ -3,15 +3,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node --watch src/server.js",
+    "dev": "node --watch-path=src src/server.js",
     "start": "node src/server.js",
     "build": "mkdir -p dist && cp -R src dist",
     "typecheck": "echo \"No type checking configured\"",
-    "test": "NODE_ENV=test node --test --test-concurrency=1 tests/*.test.js"
+    "test": "NODE_ENV=test node --test --test-force-exit --test-concurrency=1 tests/*.test.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
-    "bullmq": "^4.0.0",
+    "bullmq": "^5.81.3",
     "connect-redis": "^8.0.1",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",

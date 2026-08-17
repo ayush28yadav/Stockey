@@ -51,21 +51,34 @@ export class ApiClient {
      * @param {object} [options.headers] - Extra headers.
      * @returns {Promise<Response>} The raw fetch Response.
      */
-    async request(path, { method = 'GET', body, headers = {} } = {}) {
+    async request(path, { method = 'GET', body, headers = {} } = {}, retries = 2) {
         // Serialise the cookie jar into a single `Cookie` header value.
         const cookieHeader = [...this.cookieJar.entries()]
             .map(([name, value]) => `${name}=${value}`)
             .join('; ');
 
-        const response = await fetch(`${this.apiOrigin}${path}`, {
-            method,
-            headers: {
-                'content-type': 'application/json',
-                ...(cookieHeader ? { cookie: cookieHeader } : {}),
-                ...headers
-            },
-            body: body !== undefined ? JSON.stringify(body) : undefined
-        });
+        let response;
+        for (let attempt = 0; attempt <= retries; attempt += 1) {
+            try {
+                response = await fetch(`${this.apiOrigin}${path}`, {
+                    method,
+                    headers: {
+                        'content-type': 'application/json',
+                        ...(cookieHeader ? { cookie: cookieHeader } : {}),
+                        ...headers
+                    },
+                    body: body !== undefined ? JSON.stringify(body) : undefined
+                });
+                if (response.status !== 502 && response.status !== 503) {
+                    break;
+                }
+            } catch (err) {
+                if (attempt === retries) throw err;
+            }
+            if (attempt < retries) {
+                await new Promise((resolve) => setTimeout(resolve, 200 * (attempt + 1)));
+            }
+        }
 
         // Capture any cookies the server wants to set (login, refresh, etc.).
         const setCookies = response.headers.getSetCookie?.() ?? [];

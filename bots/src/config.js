@@ -80,7 +80,13 @@ const schema = z.object({
     // Bots authenticate through the same email/password + JWT flow as real
     // users. These settings control the synthetic identities they use.
     BOT_EMAIL_PREFIX: z.string().default('bot'),
-    BOT_PASSWORD: z.string().min(12).default('stockey-bot-password'),
+    // NO default. An attacker who knows a shared/predictable bot password can
+    // log in as the funded bot accounts, so BOT_PASSWORD must be explicitly
+    // configured (e.g. in the repo-root `.env` used by docker compose).
+    BOT_PASSWORD: z.string().min(12).refine(
+        (value) => value !== 'stockey-bot-password',
+        'BOT_PASSWORD must not use the known example value; set a strong, unique password.'
+    ),
 
     // Initial cash balance granted to each bot account (seeded directly into
     // PostgreSQL). Generous defaults give bots a long runway before they run

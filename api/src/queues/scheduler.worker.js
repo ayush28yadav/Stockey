@@ -35,6 +35,7 @@ import { createRequire } from 'node:module';
 import { Redis } from 'ioredis';
 import { config } from '../config.js';
 import { pool } from '../db.js';
+import { pubClient } from '../redis.js';
 import { enqueueDailyPnlEmail } from './notifications.queue.js';
 
 const require = createRequire(import.meta.url);
@@ -52,21 +53,16 @@ let worker = null;
 /**
  * Handle `market-open`.
  *
- * Fires at 9:15 AM IST every weekday. Emits a Socket.IO event so the
- * frontend can update the "market status" badge in real time.
- * In a production system this would also: re-enable order submission,
- * clear overnight cancellation flags, and seed the order book for the new
- * session.
- *
- * @param {import('socket.io').Server} io - Socket.IO server instance
+ * Fires at 9:15 AM IST every weekday. Publishes a Redis event so the API
+ * Socket.IO server can update the "market status" badge in real time.
  */
-async function handleMarketOpen(io) {
+async function handleMarketOpen() {
     const timestamp = new Date().toISOString();
     console.log(`[scheduler-worker] 🟢 Market opened at ${timestamp}`);
 
-    // Broadcast to all connected clients. The frontend listens for
-    // 'market:status' and updates its banner accordingly.
-    io.emit('market:status', { status: 'open', timestamp });
+    if (pubClient.isOpen) {
+        await pubClient.publish('market:status', JSON.stringify({ status: 'open', timestamp }));
+    }
 }
 
 /**
@@ -74,19 +70,14 @@ async function handleMarketOpen(io) {
  *
  * Fires at 3:30 PM IST every weekday. Performs three actions in sequence:
  * 1. Cancel all outstanding open/partially-filled limit orders.
- * 2. Emit 'market:status' close event to all WebSocket clients.
+ * 2. Publish 'market:status' close event over Redis pub/sub.
  * 3. Enqueue daily P&L summary emails for all users who have holdings.
- *
- * @param {import('socket.io').Server} io - Socket.IO server instance
  */
-async function handleMarketClose(io) {
+async function handleMarketClose() {
     const timestamp = new Date().toISOString();
     console.log(`[scheduler-worker] 🔴 Market closing at ${timestamp}. Cancelling open limit orders…`);
 
     // ── Step 1: Cancel all open limit orders ─────────────────────────────
-    // Market orders should never sit in the book (the matching engine either
-    // fills or cancels them immediately), so this only targets limit orders.
-    // We use `RETURNING` to know how many rows were affected.
     const cancelled = await pool.query(
         `UPDATE orders
          SET status = 'cancelled', updated_at = NOW()
@@ -96,11 +87,12 @@ async function handleMarketClose(io) {
     );
     console.log(`[scheduler-worker] Cancelled ${cancelled.rowCount} open limit order(s) at market close.`);
 
-    // ── Step 2: Broadcast market-close to all WebSocket clients ───────────
-    io.emit('market:status', { status: 'closed', timestamp });
+    // ── Step 2: Publish market-close over Redis pub/sub ───────────────────
+    if (pubClient.isOpen) {
+        await pubClient.publish('market:status', JSON.stringify({ status: 'closed', timestamp }));
+    }
 
     // ── Step 3: Enqueue daily P&L summary for all users with holdings ─────
-    // Fetch every user who holds at least one stock and has an email address.
     const usersResult = await pool.query(
         `SELECT DISTINCT u.id, u.email
          FROM users u
@@ -109,13 +101,11 @@ async function handleMarketClose(io) {
            AND u.email IS NOT NULL`
     );
 
-    // Enqueue one summary job per user. Jobs are deduplicated by date (see
-    // `enqueueDailyPnlEmail`), so re-running market-close won't spam users.
     for (const user of usersResult.rows) {
         await enqueueDailyPnlEmail({
             userId: user.id,
             email: user.email,
-            date: timestamp   // ISO string used as the "trading date" label
+            date: timestamp
         });
     }
     console.log(`[scheduler-worker] Enqueued daily P&L summaries for ${usersResult.rowCount} user(s).`);
@@ -165,7 +155,7 @@ async function handleOrderExpiry({ orderId }) {
  *
  * @returns {Worker} The BullMQ Worker instance.
  */
-export function startSchedulerWorker(io) {
+export function startSchedulerWorker() {
     if (worker) return worker;  // idempotent
 
     worker = new WorkerCjs('scheduled-jobs', async (job) => {
@@ -173,11 +163,11 @@ export function startSchedulerWorker(io) {
 
         switch (job.name) {
             case 'market-open':
-                await handleMarketOpen(io);
+                await handleMarketOpen();
                 break;
 
             case 'market-close':
-                await handleMarketClose(io);
+                await handleMarketClose();
                 break;
 
             case 'order-expiry':

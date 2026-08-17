@@ -87,9 +87,13 @@ test('OTP: sends a 6-digit code and verifies it successfully', async () => {
   });
   assert.equal(sendResponse.status, 204);
 
-  const storedOtp = await redis.get(`OTP:${user.userId}`);
-  assert.ok(storedOtp, 'OTP should be stored in Redis');
-  assert.equal(storedOtp.length, 6, 'OTP should be 6 digits');
+  const storedPayload = await redis.get(`OTP:${user.userId}`);
+  assert.ok(storedPayload, 'OTP should be stored in Redis');
+  const storedOtp = JSON.parse(storedPayload).otp;
+  assert.match(storedOtp, /^\d{6}$/, 'OTP should be 6 digits');
+  // The stored record is action-bound so a code minted for one operation
+  // cannot be replayed against another.
+  assert.equal(JSON.parse(storedPayload).action, 'withdraw funds');
 
   const verifyResponse = await jsonRequest('/api/auth/otp/verify', {
     method: 'POST',

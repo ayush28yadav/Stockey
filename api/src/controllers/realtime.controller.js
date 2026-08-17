@@ -1,6 +1,15 @@
 import { pool } from '../db.js';
 import { redisClient } from '../redis.js';
 
+// Mirrors the DB symbol constraint. Keeps arbitrary strings from reaching
+// Redis key lookups (resource exhaustion / cache poisoning resistance).
+const SYMBOL_PATTERN = /^[A-Z][A-Z0-9.]{0,15}$/;
+
+function parseSymbol(raw) {
+    const symbol = String(raw ?? '').trim().toUpperCase();
+    return SYMBOL_PATTERN.test(symbol) ? symbol : null;
+}
+
 function parseRedisBookMember(member) {
   const separator = member.indexOf(':');
   const score = Number(member.slice(0, separator));
@@ -16,14 +25,15 @@ function orderBookEntry(orderHash, side, score) {
     price: Number(orderHash.price),
     remaining: Number(orderHash.remaining),
     status: orderHash.status,
-    userId: orderHash.userId,
     score
   };
 }
 
 export async function getOrderBookSnapshot(request, response, next) {
   try {
-    const symbol = request.params.symbol.toUpperCase();
+    const symbol = parseSymbol(request.params.symbol);
+    if (!symbol)
+      return response.status(400).json({ error: 'INVALID_SYMBOL' });
     const bidsKey = `BIDS:${symbol}`;
     const asksKey = `ASKS:${symbol}`;
     const bidMembers = await redisClient.zRange(bidsKey, 0, 99);
@@ -54,7 +64,9 @@ export async function getOrderBookSnapshot(request, response, next) {
 
 export async function getTradeTape(request, response, next) {
   try {
-    const symbol = request.params.symbol.toUpperCase();
+    const symbol = parseSymbol(request.params.symbol);
+    if (!symbol)
+      return response.status(400).json({ error: 'INVALID_SYMBOL' });
     const result = await pool.query(`SELECT id, buy_order_id, sell_order_id, stock_symbol, price, quantity, executed_at AS created_at
       FROM trades WHERE stock_symbol = $1 ORDER BY executed_at DESC LIMIT 50`, [symbol]);
     return response.json({ symbol, trades: result.rows });

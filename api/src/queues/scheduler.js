@@ -185,7 +185,7 @@ export async function scheduleOrderExpiry(orderId) {
     // A unique, predictable job ID prevents duplicates if this function is
     // accidentally called twice for the same order (e.g. retry from the
     // orders controller).
-    const jobId = `order-expiry:${orderId}`;
+    const jobId = `order-expiry-${orderId}`;
 
     const job = await schedulerQueue.add(
         'order-expiry',

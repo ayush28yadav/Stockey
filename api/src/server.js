@@ -28,9 +28,6 @@ import { authRouter } from './routes/auth.js';
 import { userRouter } from './routes/user.js';
 import { ordersRouter } from './routes/orders.js';
 import { realtimeRouter } from './routes/realtime.js';
-import { startOrderMatchingWorker, closeOrderMatchingWorker } from './queues/order-matching.worker.js';
-import { startSchedulerWorker, closeSchedulerWorker } from './queues/scheduler.worker.js';
-import { startNotificationsWorker, closeNotificationsWorker } from './queues/notifications.worker.js';
 import { registerScheduledJobs, closeSchedulerQueue } from './queues/scheduler.js';
 import { closeNotificationsQueue } from './queues/notifications.queue.js';
 import { runMigrations } from './migrations.js';
@@ -86,19 +83,9 @@ const io = attachSocketServer(httpServer, config.FRONTEND_ORIGIN);
 
 const server = httpServer.listen(config.PORT, () => console.log(`API listening on ${config.API_ORIGIN}`));
 
-// Start the order-matching worker. The worker is intentionally
-// started in-process for the small demo environment; a production
-// deployment would run workers separately and scale independently.
-const matchingWorker = startOrderMatchingWorker();
-const schedulerWorker = startSchedulerWorker(io);
-const notificationsWorker = startNotificationsWorker();
-
 async function shutdown(signal) {
-    console.log(`${signal} received; shutting down.`);
+    console.log(`${signal} received; shutting down API.`);
     server.close(async () => {
-        await closeOrderMatchingWorker();
-        await closeSchedulerWorker();
-        await closeNotificationsWorker();
         await closeSchedulerQueue();
         await closeNotificationsQueue();
         await closePubSubClients();

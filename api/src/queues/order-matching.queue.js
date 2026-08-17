@@ -26,7 +26,7 @@ export const orderMatchingQueue = new QueueCjs('order-matching', {
 // Enqueue an order for matching. `jobId` uses the order id so retries
 // for the same order are deduplicated by BullMQ.
 export async function enqueueOrderForMatching(orderId) {
-    return orderMatchingQueue.add('match-order', { orderId }, { jobId: `match:${orderId}` });
+    return orderMatchingQueue.add('match-order', { orderId }, { jobId: `match-${orderId}` });
 }
 
 export async function closeOrderMatchingQueue() {
